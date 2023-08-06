@@ -3,9 +3,9 @@ import type { Site, SocialObjects } from "./types";
 export const SITE: Site = {
   website: "https://rmencattini.github.io",
   author: "Romain Mencattini",
-  desc: "A minimal, responsive and SEO-friendly blog powered by Astro with AstroPaper theme.",
+  desc: "Romain Mencattini's minimal blog powered by Astro with AstroPaper theme.",
   title: "Romain Mencattini",
-  ogImage: "astropaper-og.jpg",
+  ogImage: "preview-background.jpg",
   lightAndDarkMode: true,
   postPerPage: 3,
 };
