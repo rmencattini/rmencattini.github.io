@@ -3,34 +3,47 @@ layout: ../layouts/AboutLayout.astro
 title: "About"
 ---
 
-AstroPaper is a minimal, responsive and SEO-friendly Astro blog theme. I designed and crafted this based on [my personal blog](https://satnaing.dev/blog).
+I won't lie and as I don't have anything to say about me, This page will be a basic resume. Feel free to ignore it.\
+I am a software engineer with experiences in both backend and frontend.
+Here are some of them.
 
-This theme is aimed to be accessible out of the box. Light and dark mode are supported by
-default and additional color schemes can also be configured.
+## Evooq
+Location: Lausanne\
+Position: Backend and Frontend Software Engineer\
+Dates: December 2022 - Present
 
-This theme is self-documented \_ which means articles/posts in this theme can also be considered as documentations. So, see the documentation for more info.
+* Developed expertise in both backend and frontend, contributing to maintenance and feature development.
+* Participating in the migration of frontend to micro-frontend architecture, optimizing code organization and scalability.
+* Spearheaded Vue2 to Vue3 migration, enhancing application performance and utilizing new framework features.
+* Collaborated with QA/DevOps teams, automating tests with Cypress and providing Apple M1 support for Docker.
+* Consistently embraced challenges, delivering impactful solutions for team and company success.
+* Proactively, initiating and developing Proof-of-Concepts (POCs) showcasing cutting-edge technologies like WebSockets and gRPC.
 
-<div>
-  <img src="/assets/dev.svg" class="sm:w-1/2 mx-auto" alt="coding dev illustration">
-</div>
+## Evooq
+Location: Lausanne\
+Position: Frontend Software Engineer\
+Dates: March 2021 - December 2022
 
-## Tech Stack
+* Contributed to an advisory bank product, initially built on Angular 1.x, and actively participated in migrating it to Vue.js.
+* Successfully tackled the challenges of a complex web application, utilizing both business and software expertise.
+* Embraced the opportunity to explore a new development approach, gaining valuable insights and experience along the way.
 
-This theme is written in vanilla JavaScript (+ TypeScript for type checking) and a little bit of ReactJS for some interactions. TailwindCSS is used for styling; and Markdown is used for blog contents.
+## Edgelab
+Location: Lausanne\
+Position: Backend Software Engineer\
+Dates: March 2019 - March 2021
 
-## Features
+* Participating in a dynamic team in delivering fast, scalable, and reliable APIs catering to diverse clients, both internal and external to the company.
+* Successfully implemented a microservice architecture, prioritizing seamless communication with other teams for cohesive development.
+* Leveraged cutting-edge technologies such as WebFlux and Kotlin's reactivity to ensure optimal performance and responsiveness.
+* Employed Grafana for comprehensive monitoring, ensuring proactive issue identification and resolution.
+* Committed to the "Clean Code" approach, fostering simplicity, cleanliness, and maintainability throughout the development process.
 
-Here are certain features of this site.
+## Lombard-Odier
+Location: Genève\
+Position: QA internship\
+Dates: September 2016 - September 2017
 
-- fully responsive and accessible
-- SEO-friendly
-- light & dark mode
-- fuzzy search
-- super fast performance
-- draft posts
-- pagination
-- sitemap & rss feed
-- highly customizable
+* Took on the responsibility of writing end-user tests, ensuring application behavior adherence and minimizing regressions.
+* Gained valuable work experience during this internship, serving as an impactful introduction to the professional world.
 
-If you like this theme, you can star/contribute to the [repo](https://github.com/satnaing/astro-paper).  
-Or you can even give any feedback via my [email](mailto:contact@satnaing.dev).

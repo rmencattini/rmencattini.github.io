@@ -19,11 +19,6 @@ export const LOGO_IMAGE = {
   height: 46,
 };
 
-// TODO:
-//     * Change index.astro description
-//     * add build deployement
-//     * improve the websocket article
-
 export const SOCIALS: SocialObjects = [
   {
     name: "Github",

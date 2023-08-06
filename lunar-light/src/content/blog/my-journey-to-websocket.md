@@ -1,12 +1,12 @@
 ---
 author: Romain Mencattini 
 pubDatetime: 2023-08-05T15:22:00Z
-title: My journey to websocket
-postSlug: my-journey-to-websocket
+title: My journey to Websocket
+postSlug: my-journey-to-Websocket
 featured: true
 draft: false
 tags:
-  - websocket
+  - Websocket
   - backend
   - frontend
   - spring-boot
@@ -15,111 +15,107 @@ tags:
   - authentication
 ogImage: ""
 description:
-    My journey creating a project with backend and frontend interacting each other over websocket with full
+    My journey creating a project with backend and frontend interacting each other over Websocket with full
     authentication provided by keycloak.
 ---
 
-# Websocket-example-spring-boot-vuejs
-An working example of Spring boot backend and Vuejs frontend on different URL.
+> For those who can't wait here is the link to technical solution part: [Technical solution](#technical-solution)\
+> and [the Github link to the POC](https://github.com/rmencattini/websocket-example-spring-boot-vuejs)
 
-I created this small project to tackle few issues I encouterd on other tutorials.
-The main one was that all project ran FE on the same URL than BE. It makes the stuff easier for allowed origins and url management.
+## Backstory
 
-## Requirements
+A bit of context: my company is providing an application on premise to different banks. It is composed of a backend and frontend apps.
+It relies heavily on REST calls but due to the nature of the data (clients, portfolios, positions, risk metrics, etc.) it can be pretty slow to be computed.
+Moreover, some features such as refresh or notifications are currently handle by REST calls.
 
-To run both projects you will either:
-* java 17
-* node 18
+We thought it would be worth investigating some other communication channel between the apps to tackle these problems. One of the solutions was Websockets.
+The backend app is a beast, and it requires minutes to start, so the development cycle is pretty slow. After discussion with colleagues we ended up creating a
+minimal POC project to:
 
-or `docker-compose`
+1. Test the technology
+2. Have quick feedback loop
 
-## Run
+## Tech stack
 
-There is two way to run it. As dev and as docker.
+As tech stack, I mimicked the one we used, modulo small changes, in order to have a good carry over effect. It means:
 
-### Dev run
+* `Java` with `Spring-boot` framework.
+* `VueJs`
+* `Keycloak` for `OAuth2` provider
 
-You will need to run all projects separatly. Then you can go to http://localhost:7000 and test this small webapp.
+Most of the tutorials I found did not correspond to my requirements:
 
-Spring project will run on port `7100`.
+* The frontend was directly into the spring-boot application (in the `resources/` folder) and it was on the same URL.
+* No Keycloak authentication
+* No mix between Websocket authentication and REST authentication
 
-Vuejs project uses port `7000`.
+## High-level solution
+
+As `Stomp` is a high-level protocol and most resources focusing on it, it will be our main tool.
+Here is a workflow chart on which we will rely:
+
+![uml diagram workflow](../../my-journey-to-websocket-uml-diagram.jpg)
 
 
-#### Websocket-spring-boot
+The frontend authenticates to `Keycloak` and receives a `Jwt` token.\
+The token is used in different way to authenticate the caller (either for REST or Websocket).
 
-At the root of the `websocket-example-spring-boot-vuejs`:
-```bash
-cd websocket-spring-boot
-./gradlew bootRun
-```
-:warning: The keycloak docker should be running before starting the BE.
+Then Client does a connection request to the Server (aka. backend), once he got the acknowledgement, he can subscribe to some channels.
 
-#### Websocket-vuejs
-At the root of the `websocket-example-spring-boot-vuejs`:
+When Client sends a message, the Websocket channel forwards it to all subscribers. Backend run a hook before redirecting message to the proper controller.
+The hook verifies the token validity by calling the authentication server. Once the token is validated, it sends the message to the controller.
 
-```bash
-cd websocket-vuejs
-npm install
-npm run dev
-```
+In our example, the controller gets the message and sends another message to the Websocket channel which ultimatly is forwaded to Client 
+(due to his previous subscription)
 
-#### Keycloak
 
-```
-docker run --name keycloak -p 8080:8080 \
-     -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
-     -v ./oauth2-server:/opt/keycloak/data/import \
-     quay.io/keycloak/keycloak:latest \
-     start-dev \
-     --http-port 8080 \
-     --http-relative-path /auth \
-     --import-realm
-```
+## Technical solution
 
-### Docker-compose run
+The solution explained as plain words
+> The Websocket is configured so that each time a message arrives, it goes through an interceptor which will:
+> 
+> * verify the message contains authorization token in its headers 
+> * check the validity of token
+> * decode the token
+> * set the authenticated user to the context of _current message_ 
 
-Simply go to the root of project and run:
-```
-docker-compose up
-```
-
-## Code breakdown
-
-### Spring
-
+Here is the Websocket configuration:
 ```java
+@Configuration
+@EnableWebSocketMessageBroker // 1)
+@Order(Ordered.HIGHEST_PRECEDENCE + 99) // 2)
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic", "/alert"); // 1)
-        config.setApplicationDestinationPrefixes("/app"); // 2)
+        config.enableSimpleBroker("/topic", "/alert"); // 3)
+        config.setApplicationDestinationPrefixes("/app"); // 4)
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry
-            .addEndpoint("/websocket") // 3)
-            .setAllowedOriginPatterns("*"); // 4)
+            .addEndpoint("/Websocket") // 5)
+            .setAllowedOriginPatterns("*"); // 6)
     }
 
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(new HttpHandshakeInterceptor()); // 5)
+        registration.interceptors(new Interceptor()); // 7)
     }
 
-    public class HttpHandshakeInterceptor implements ChannelInterceptor {
+    public class Interceptor implements ChannelInterceptor {
 
         @Override
-        public org.springframework.messaging.Message<?> preSend(org.springframework.messaging.Message<?> message, // 6)
+        public Message<?> preSend(org.springframework.messaging.Message<?> message, // 8)
                 MessageChannel channel) {
             StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-            if (StompCommand.SEND == accessor.getCommand()) { // 7)
-                JwtDecoder jwtDecoder = jwtDecoder(); // 8)
+            if (StompCommand.SEND == accessor.getCommand() || StompCommand.SEND == accessor.getCommand()) { // 9)
+                JwtDecoder jwtDecoder = jwtDecoder(); // 10)
                 String authorizationToken = accessor.getFirstNativeHeader("Authorization");
                 if (authorizationToken != null) {
                     Jwt jwt = jwtDecoder.decode(token);
-                    Principal principal = User.builder().build(); // 9)
+                    Principal principal = User.builder().build(); // 11)
                     accessor.setUser(principal);
                 } else {
                     throw new OAuth2AuthenticationException(
@@ -132,7 +128,8 @@ docker-compose up
 
 
 ```
-
+1. The annotation to mark this configuration for the Websocket.
+1. The order needs to be higher than spring security, otherwise the hooks won't work.
 1. Create an in-memory message brook with some destinations for message exchanging.
 2. Set a prefix for Spring to determine which message should be rooted to `@MessageMapping`.
 3. The stomp endpoint clients will connect to
@@ -141,90 +138,10 @@ docker-compose up
 6. The interceptor will work on incoming channel message before dispatch it to controllers.
 7. Check which type of message (could be `CONNECT`, `HEARTBEAT`,...)
 8. Init a jwt decoder (implementation depends on your authentication server)
-9. Once you will have decode the jwt, you can build a `User` object with all the property you want. The `User` class should implement the `Principal` interface.
+9. Once you will have decoded the jwt, you can build a `User` object with all the property you want. The `User` class should implement the `Principal` interface.
 10. Set for the context *of the current message*, the authenticated user.
 
-Here is a diagram of the architecture: ![architecture diagram](https://assets.toptal.io/images?url=https%3A%2F%2Fuploads.toptal.io%2Fblog%2Fimage%2F129598%2Ftoptal-blog-image-1555593632876-e8be5fa57853689bab282bb8be341130.png)
-(_source: https://www.toptal.com/java/stomp-spring-boot-websocket_)
+## Outro
 
-```java
-@Controller
-@RequiredArgsConstructor
-@Slf4j
-public class WebSocketController {
-    private final SimpMessagingTemplate messagingTemplate; // 1)
-
-    @MessageMapping("/hello") // 2)
-    public void greeting(@Payload String message, Principal principal){ // 3)
-        messagingTemplate.convertAndSend("/topic/greetings", "Hello, " + message + "!"); // 4)
-        messagingTemplate.convertAndSend("/alert/trigger", ""); // 4)
-        log.warn("\n\nUsername: " + principal.getName());
-    }
-}
-```
-
-1. This component injection can replace the `@SendTo`. It is usefull when you want to send data to different channels.
-2. Such as `@Get(/hello)` for HTTP call, this annotation will listen the message with prefix + path (here: `/app/hello`) and run the approriate controller function.
-3. `Principal` is the authenticated user passed. It is set during a `preSend` hook configured during websocket configuration.
-4. Use the injected component to send message to two channels.
-
-
-### Vuejs
-
-```typescript
-const stompClient = new Stomp.Client({ // 1)
-  brokerURL: 'ws://localhost:7100/websocket', // 2)
-  onConnect() { // 3)
-      connected.value = true;
-      stompClient.subscribe('/topic/greetings', (message: Stomp.IMessage) => { // 4)
-        result.value = message.body;
-      });
-      stompClient.subscribe('/alert/trigger', () => { // 4)
-        shake.value = true;
-        setTimeout(() => {
-          shake.value = false;
-        }, 2000)
-      })
-  }
-});
-
-function sendGrettings(): void {
-  stompClient.publish({destination: '/app/hello', body: name.value, headers: { "Authorization": "Bearer eyz..."}}) // 5)
-}
-
-stompClient.activate(); // 6)
-```
-1. Instanciate a stomp client to communicate with the BE server.
-2. Set the broker url. It needs to be prefixed with `ws` to use websocket protocole.
-3. Define a callback when the connection is established.
-4. During the connection callback, subscribe to some channel and set some callback when message will arrive.
-5. Send body to a determined destination. It is prefixed by `/app` for the Spring controller to handle it. It requires the `Authorization` header to be set with valid token.
-6. Activate the client we created (rephrased: fire the connection to the STOMP server)
-
-### Keycloak
-
-The config in the `oaut2-server` folder contains one realm: `dummy` and one couple user/password: `foo` / `bar`.
-
-
-## Notes
-
-Configure `CORS` in two places:
-```java
-@EnableWebMvc
-public class WebMvcConfig implements WebMvcConfigurer {
-```
-```java
-@EnableWebSecurity
-class SecurityConfig {
-    //...
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-```
-can create `CORS not allowed` on the FE.
-
-
-## Usefull links:
-* https://www.toptal.com/java/stomp-spring-boot-websocket
-* https://spring.io/guides/gs/messaging-stomp-websocket/
-* https://howtodoinjava.com/devops/keycloak-export-import-realm/
-* https://rob-ferguson.me/getting-started-with-keycloak/
+The technical implementation can be found here: [the Github link to the POC](https://github.com/rmencattini/websocket-example-spring-boot-vuejs)\
+It contains a `README` more focused on the implementation as well as the instruction to run the project.
