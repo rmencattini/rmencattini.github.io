@@ -275,6 +275,13 @@ declare module 'astro:content' {
 } & { render(): Render[".md"] };
 };
 "blog": {
+"my-journey-to-neovim.md": {
+	id: "my-journey-to-neovim.md";
+  slug: "my-journey-to-neovim";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
 "my-journey-to-websocket.md": {
 	id: "my-journey-to-websocket.md";
   slug: "my-journey-to-websocket";
