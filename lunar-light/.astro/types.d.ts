@@ -275,6 +275,13 @@ declare module 'astro:content' {
 } & { render(): Render[".md"] };
 };
 "blog": {
+"my-journey-to-cmp-lsp-luasnip.md": {
+	id: "my-journey-to-cmp-lsp-luasnip.md";
+  slug: "my-journey-to-cmp-lsp-luasnip";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
 "my-journey-to-neovim.md": {
 	id: "my-journey-to-neovim.md";
   slug: "my-journey-to-neovim";
